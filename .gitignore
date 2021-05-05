@@ -1,2 +1,3 @@
 deps*
 .Rproj.user
+*.DS_Store
