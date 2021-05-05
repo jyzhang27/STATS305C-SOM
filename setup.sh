@@ -3,6 +3,8 @@
 projectdir=$(dirname "BASH_SOURCE")
 cd $projectdir
 
+mkdir -p deps
+
 # clone data repo
 if [ ! -d "deps/transfers" ]; then
     cd deps
