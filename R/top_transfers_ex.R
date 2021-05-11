@@ -1,8 +1,8 @@
 library(kohonen)
 
-top_transfers_leagues <- read.csv('~/Documents/STATS305C-SOM/data/top_transfers_leagues_all.csv')
+top_transfers_leagues <- read.csv('~/Documents/STATS305C-SOM/data/top_transfers_all.csv')
 # drop the index from reading in 
-top_transfers_leagues <- top_transfers_leagues[,-1]
+top_transfers_leagues <- top_transfers_leagues[,-c(1, 4,5,6,7)]
 top_transfers_leagues$Season <- as.factor(top_transfers_leagues$Season)
 head(top_transfers_leagues)
 
@@ -19,6 +19,9 @@ fit_som_models <- function(df) {
   
   # see how many samples are in each node, aim for 5-10 
   plot(som_model, type='count', main='Samples per Node')
+  
+  # plot each data point
+  plot(som_model, type='mapping', pch=20)
   
   # U matrix for distance and then clustering!
   plot(som_model, type='dist.neighbours', main='SOM neighbor distances')
