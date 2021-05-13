@@ -1,6 +1,7 @@
 library(kohonen)
 
 # just try it out 
+transfers_in_data <- read.csv('../data/transfers_in.csv')
 transfers_in_2019_data <- transfers_in_data[transfers_in_data$year == 2019, ]
 
 set.seed(1234)
@@ -29,7 +30,4 @@ plot(som_model, type='mapping', keepMargins = F, col=NA,
      bg= cols[som_hc], add.cluster.boundaries(som_model, som_hc))
 
 # mapping nodes back
-transfers_in_2019_data <-cbind(transfers_in_2019_data, som_hc[som_model$unit.classif])
-colnames(transfers_in_2019_data )[11] <- 'cluster'
-
-
+transfers_in_2019_data <-cbind(transfers_in_2019_data, cluster=som_hc[som_model$unit.classif])
