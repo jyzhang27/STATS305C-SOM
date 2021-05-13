@@ -1,7 +1,7 @@
 library(kohonen)
 library(dplyr)
 
-all_df <- read.csv('~/Documents/STATS305C-SOM/data/top_transfers_all.csv')
+all_df <- read.csv('..//data/top_transfers_all.csv')
 # drop the index from reading in 
 top_transfers_leagues <- all_df[,-c(1,2, 5,6,7,8)]
 head(top_transfers_leagues)
