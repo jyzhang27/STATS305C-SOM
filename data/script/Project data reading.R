@@ -28,6 +28,7 @@ top_transfers$Market_value <- top_transfers$Market_value/1000000
 top_transfers$Transfer_fee <- top_transfers$Transfer_fee/1000000
 
 # make a column with difference in price
+# whenever running something, only include one of price_diff and {Transfer fee, market value}
 top_transfers$Price_diff <- top_transfers$Transfer_fee- top_transfers$Market_value
        
 # Change some leagues names to match 
@@ -54,7 +55,7 @@ top_transfers[top_transfers == 'Liga MX Apertura'] <- 'Liga MX'
 top_transfers[top_transfers == 'Liga MX Clausura'] <- 'Liga MX'
 top_transfers[top_transfers == 'Korean FA Cup'] <- ' Korea, South'
 
-# Fix the Super League issue
+# Fix the Super League issue, where 3 different leagues were mapped to the same name
 super_league_from <- top_transfers[which(top_transfers$League_from == "Super League"),]
 super_league_from <- super_league_from[, 4:5]
 unique(super_league_from$Team_from)
@@ -79,7 +80,7 @@ top_transfers[which(top_transfers$Team_to %in% china_SL), 7] <- 'China Super Lea
 top_transfers[which(top_transfers$Team_from %in% swiss_SL), 5] <- 'Swiss Super League'
 top_transfers[which(top_transfers$Team_to %in% swiss_SL), 7] <- 'Swiss Super League'
 
-# Fix Primier Liga Problem
+# Fix Primier Liga Problem where two different leagues were mapped to the same league
 premierliga_from <- top_transfers[which(top_transfers$League_from == "Premier Liga"),]
 premierliga_from <- premierliga_from[, 4:5]
 unique(premierliga_from$Team_from)
@@ -102,7 +103,15 @@ top_transfers[which(top_transfers$Team_to %in% russian_teams), 7] <- 'Russian Pr
 top_transfers[which(top_transfers$Team_from %in% ukrainian_teams), 5] <- 'Ukranian Premier Liga'
 top_transfers[which(top_transfers$Team_to %in% ukrainian_teams), 7] <- 'Ukranian Premier Liga'
 
-# Separate the leagues 
+# Separate the leagues into 6 categories
+# there is .txt with the name of league and country for some leagues that you can't tell
+# Big5 - The top 5 European leagues 
+# Big5 B - The lower tiers of the football system in the top 5 countries
+# European - All the other top-flight European leagues 
+# Asia Africa - All top-flight leagues in Asia or Africa
+# Americas - All top-flight leagues in N and S America
+# Other B - All lower tiers of non-European clubs
+
 (all_leagues <-unique(c(top_transfers$League_from, top_transfers$League_to)))
 
 big5_leagues <- c('Serie A', 'Premier League', 'Ligue 1', 'Bundesliga', 'LaLiga')
@@ -118,8 +127,6 @@ top_aa_leagues <- c('J1 League', 'China Super League', 'UAE Gulf League', 'Profe
                        "Ligat ha'Al", 'Botola Pro', 'Ligue I Pro', ' Saudi Arabia', ' Korea, South')
 top_amer_leagues <- c('Primera División', ' Brazil', ' Paraguay', ' Chile', 'Serie A Segunda Etapa', ' Uruguay',
                       'MLS', ' Canada', 'Liga MX')
-
-league_types <- c('Big5', 'Big5 B', 'Europe', 'Asia-Africa', 'Americas', 'Other B')
 
 # add column of which league type it belongs to based on the league 
 get_league_type <- function(leagues) {
