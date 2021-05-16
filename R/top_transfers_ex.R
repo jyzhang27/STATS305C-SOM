@@ -1,18 +1,24 @@
 library(kohonen)
 library(dplyr)
 
-all_df <- read.csv('..//data/top_transfers_all.csv')
+#all_df <- read.csv('..//data/top_transfers_all.csv')
+
+all_df <- read.csv('~/Documents/STATS305C-SOM/data/top_transfers_all.csv')
 # drop the index from reading in 
-top_transfers_leagues <- all_df[,-c(1,2, 5,6,7,8)]
+top_transfers_leagues <- all_df[,-c(1,2,3, 5,6,7,8)]
 head(top_transfers_leagues)
 
-top_transfers_leagues[, c(1,3)] <- lapply(top_transfers_leagues[, c(1,3)], factor)
-head(top_transfers_leagues)
+top_transfers_leagues$Season <- factor(top_transfers_leagues$Season)
 
 # reorder the levels
 top_transfers_leagues$League_type_to <- factor(top_transfers_leagues$League_type_to, levels=c('Big5', 'Europe', 'Americas', 'Asia Africa', 'Big5 B', 'Other B'))
 top_transfers_leagues$League_type_from <- factor(top_transfers_leagues$League_type_from, levels=c('Big5', 'Europe', 'Americas', 'Asia Africa', 'Big5 B', 'Other B'))
+top_transfers_leagues$Position_type <- factor(top_transfers_leagues$Position_type, levels= c('Goalkeeper', 'Defender', 'Midfielder', 'Forward'))
 lapply(top_transfers_leagues, summary)
+
+top_transfers_leagues$Transfer_fee <- as.numeric(scale(top_transfers_leagues$Transfer_fee))
+top_transfers_leagues$Market_value <- as.numeric(scale(top_transfers_leagues$Market_value))
+top_transfers_leagues$Age <- as.numeric(scale(top_transfers_leagues$Age))
 
 # try with the market value and transfer fee, transfer fee is really driving it 
 top_transfers_leagues1 <- subset(top_transfers_leagues, select=-c(Price_diff))
@@ -22,8 +28,8 @@ top_transfers_leagues1 %>% count(cluster)
 
 # cluster #4 has only 4 transfers! they happen to be the 4 transfers with 
 # largest transfer fee and largest market value 
-sum(top_transfers_leagues1$cluster == 4)
-all_df[which(top_transfers_leagues1$cluster == 4), ]
+sum(top_transfers_leagues1$cluster == 1)
+all_df[which(top_transfers_leagues1$cluster == 1), ]
 sort(all_df$Transfer_fee, decreasing = T)[1:4]
 sort(all_df$Market_value, decreasing = T)[1:4]
 
@@ -38,6 +44,17 @@ sort(all_df$Transfer_fee, decreasing = T)[5:21]
 # without season 
 top_transfers_leagues2 <- subset(top_transfers_leagues, select=-c(Season, Price_diff))
 fit_som_models(top_transfers_leagues2, xdim=20, ydim=15, 'gaussian')
+som_fit <- fit_som_models(top_transfers_leagues2, xdim=20, ydim=15, 'bubble')
+
+som_fit %>% count(cluster)
+all_df[which(som_fit$cluster == 2), ]
+
+library(cluster)
+distances <- daisy(top_transfers_leagues2, metric='gower')
+hierarchical_clustering <- cutree(hclust(distances, method='complete'), 5)
+summary(factor(hierarchical_clustering))
+plot(distances)
+all_df[which(hierarchical_clustering == 5), 'Position_type']
 
 # try with only the price difference 
 top_transfers_leagues3 <- subset(top_transfers_leagues, select=-c(Market_value, Transfer_fee))
@@ -95,7 +112,7 @@ fit_som_models <- function(df, xdim, ydim, h_function, toroidal=F, topo='hexagon
   colnames(df)[ncol(df)] <- 'cluster'
   
   # Heatmap for specific variable 
-  par(mfrow=c(2,2))
+  par(mfrow=c(2,3))
   for (i in 1:ncol(som_codebook)) {
     plot(som_model, type='property', property= som_codebook[,i],
          main= colnames(som_codebook)[i], palette.name = colorRampPalette(c('blue', 'green', 'yellow','red')))

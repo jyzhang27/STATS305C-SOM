@@ -161,7 +161,27 @@ league_type_from <- get_league_type(top_transfers$League_from)
 top_transfers$League_type_from <- league_type_from
 top_transfers$League_type_to <- league_type_to
 
+positions <- top_transfers$Position
 
+defense <- c('Centre-Back', 'Left-Back', 'Right-Back')
+midfield <- c('Attacking Midfield', 'Left Midfield', 'Defensive Midfield', 'Central Midfield', 'Right Midfield')
+forwards <- c('Centre-Forward', 'Second Striker', 'Left Winger', 'Right Winger')
+
+position_type <- c()
+for (i in 1:length(positions)) {
+  position <- positions[i]
+  if (position %in% defense) {
+    position_type[i] <- 'Defender'
+  } else if (position %in% midfield) {
+    position_type[i] <- 'Midfielder'
+  } else if (position %in% forwards) {
+    position_type[i] <- 'Forward'
+  } else {
+    position_type[i] <- 'Goalkeeper'
+  }
+}
+
+top_transfers$Position_type <- position_type
 # keep only league in league out, no club in club out 
 #top_transfers_leagues <- top_transfers[,-c(1,4,6)]
 
