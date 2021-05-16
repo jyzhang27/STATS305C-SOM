@@ -7,15 +7,15 @@ library(stringi)
 
 # this data is from 
 # https://github.com/mneedham/football-transfers/blob/master/data/transfers.json
-transfers <-lapply(readLines("~/Documents/STATS305C-SOM/data/transfers.json"), fromJSON)
-transfers_df_list <- lapply(transfers, data.frame, stringsAsFactors = FALSE)
-transfers_all_df <- rbindlist(transfers_df_list)
-colnames(transfers_all_df)
-cols_want <- colnames(transfers_all_df)[c(1,3,4,5,7,9,10, 12,17,18,20,25)]
-transfers_df <- transfers_all_df[, c(1,3,4,5,7,9,10, 12,17,18,20,25)]
-transfers_df <- as.data.frame(transfers_df)
-
-write.csv(transfers_df, 'transfers_other_source.csv')
+# transfers <-lapply(readLines("~/Documents/STATS305C-SOM/data/transfers.json"), fromJSON)
+# transfers_df_list <- lapply(transfers, data.frame, stringsAsFactors = FALSE)
+# transfers_all_df <- rbindlist(transfers_df_list)
+# colnames(transfers_all_df)
+# cols_want <- colnames(transfers_all_df)[c(1,3,4,5,7,9,10, 12,17,18,20,25)]
+# transfers_df <- transfers_all_df[, c(1,3,4,5,7,9,10, 12,17,18,20,25)]
+# transfers_df <- as.data.frame(transfers_df)
+# 
+# write.csv(transfers_df, 'transfers_other_source.csv')
 
 # this data is from 
 # https://www.kaggle.com/vardan95ghazaryan/top-250-football-transfers-from-2000-to-2018
@@ -102,6 +102,8 @@ top_transfers[which(top_transfers$Team_from %in% russian_teams), 5] <- 'Russian 
 top_transfers[which(top_transfers$Team_to %in% russian_teams), 7] <- 'Russian Premier Liga'
 top_transfers[which(top_transfers$Team_from %in% ukrainian_teams), 5] <- 'Ukranian Premier Liga'
 top_transfers[which(top_transfers$Team_to %in% ukrainian_teams), 7] <- 'Ukranian Premier Liga'
+# this one has team_from= Anzhi which was in lower division at that time so change it back
+top_transfers[which(top_transfers$Name == 'Odil Akhmedov'), 5] <- '1.Division'
 
 # Separate the leagues into 6 categories
 # there is .txt with the name of league and country for some leagues that you can't tell
@@ -127,6 +129,7 @@ top_aa_leagues <- c('J1 League', 'China Super League', 'UAE Gulf League', 'Profe
                        "Ligat ha'Al", 'Botola Pro', 'Ligue I Pro', ' Saudi Arabia', ' Korea, South')
 top_amer_leagues <- c('Primera División', ' Brazil', ' Paraguay', ' Chile', 'Serie A Segunda Etapa', ' Uruguay',
                       'MLS', ' Canada', 'Liga MX')
+setdiff(c(big5_leagues, secondary_big5_leagues, top_european_leagues, secondary_leagues, top_aa_leagues, top_amer_leagues), all_leagues)
 
 # add column of which league type it belongs to based on the league 
 get_league_type <- function(leagues) {
