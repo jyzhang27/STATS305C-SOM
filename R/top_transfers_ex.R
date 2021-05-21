@@ -2,125 +2,152 @@ library(kohonen)
 library(dplyr)
 library(cluster)
 library(xtable)
+library(ggplot2)
+library(gridExtra)
 
-#all_df <- read.csv('..//data/top_transfers_all.csv')
+FIG.PATH <- '../figs/'
 
-all_df <- read.csv('~/Documents/STATS305C-SOM/data/top_transfers_all.csv')
-# drop the index from reading in 
-top_transfers_leagues <- all_df[,-c(1,2,3, 5,6,7,8, 12)]
-head(top_transfers_leagues)
+fit_som_models <- function(df, xdim, ydim, h_function, 
+                           toroidal=F, topo='hexagonal', fig.path=FIG.PATH) 
+{
 
-top_transfers_leagues$Season <- factor(top_transfers_leagues$Season)
+    # toroidal doesn't entirely make sense since there isn't anything cyclic about the data
 
-# reorder the levels
-top_transfers_leagues$League_type_to <- factor(top_transfers_leagues$League_type_to, levels=c('Big5', 'Europe', 'Americas', 'Asia Africa', 'Big5 B', 'Other B'))
-top_transfers_leagues$League_type_from <- factor(top_transfers_leagues$League_type_from, levels=c('Big5', 'Europe', 'Americas', 'Asia Africa', 'Big5 B', 'Other B'))
-top_transfers_leagues$Position_type <- factor(top_transfers_leagues$Position_type, levels= c('Goalkeeper', 'Defender', 'Midfielder', 'Forward'))
-lapply(top_transfers_leagues, summary)
+    set.seed(1234)
+    som_grid <- somgrid(xdim, ydim, topo, neighbourhood.fct = h_function, toroidal)
 
-top_transfers_leagues$Transfer_fee <- as.numeric(scale(top_transfers_leagues$Transfer_fee))
-top_transfers_leagues$Market_value <- as.numeric(scale(top_transfers_leagues$Market_value))
-top_transfers_leagues$Age <- as.numeric(scale(top_transfers_leagues$Age))
+    som_model <- som(data.matrix(df), grid=som_grid, rlen=500, mode='batch')
 
-top_transfers_leagues <- top_transfers_leagues[c(1,2,3,4,7,5,6)]
+    par(mfrow=c(1,1))
 
-# try with the market value and transfer fee, transfer fee is really driving it 
-top_transfers_leagues1 <- subset(top_transfers_leagues, select=-c(Season))
-top_transfers_leagues1 <- fit_som_models(top_transfers_leagues1, xdim=20, ydim=15, 'gaussian')
+    # training progress to see convergence 
+    png(file=paste(fig.path, 'transfer_training.png', sep=''))
+    plot(som_model, type='changes')
+    dev.off()
 
-top_transfers_leagues1 %>% count(cluster)
+    # see how many samples are in each node, aim for 5-10 
+    png(file=paste(fig.path, 'transfer_node_samples.png', sep=''))
+    plot(som_model, type='count', main='Samples per Node')
+    dev.off()
 
-# cluster #5 has only 4 transfers! they happen to be the 4 transfers with 
-# largest transfer fee and largest market value 
-sum(top_transfers_leagues1$cluster == 5)
-all_df[which(top_transfers_leagues1$cluster == 5), ]
-xtable(all_df[which(top_transfers_leagues1$cluster == 5), ])
-sort(all_df$Transfer_fee, decreasing = T)[1:4]
-sort(all_df$Market_value, decreasing = T)[1:4]
+    # plot each data point
+    png(file=paste(fig.path, 'transfer_mapping.png', sep=''))
+    plot(som_model, type='mapping', pch=20)
+    dev.off()
 
-# cluster #4 has 24, what else do we want to say 
-all_df[which(top_transfers_leagues1$cluster == 4), ]
+    # U matrix for distance and then clustering!
+    png(file=paste(fig.path, 'transfer_U.png', sep=''))
+    plot(som_model, type='dist.neighbours', main='SOM neighbor distances')
+    dev.off()
 
-# cluster #3 has 159, what else do we want to say 
-all_df[which(top_transfers_leagues1$cluster == 3), ]
+    # plot the codebook vectors 
+    png(file=paste(fig.path, 'transfer_codebook.png', sep=''))
+    plot(som_model, type='codes', zlim=c('red', 'green', 'blue'))
+    dev.off()
 
-# hiearchical part
-distances <- daisy(top_transfers_leagues1, metric='gower')
-hierarchical_clustering <- cutree(hclust(distances, method='complete'), 5)
-summary(factor(hierarchical_clustering))
-plot(distances)
-all_df[which(hierarchical_clustering == 5), 'Position_type']
-
-# just try it out 
-fit_som_models <- function(df, xdim, ydim, h_function, toroidal=F, topo='hexagonal') {
-  # here toroidal doesn't entirely make sense since there isn't anything cyclic about the data
-  # can choose the size of the grid and neighborhood function 
-  # use the batch algorithm for speed
-  set.seed(1234)
-  som_grid <- somgrid(xdim, ydim, topo, neighbourhood.fct = h_function, toroidal)
-  
-  som_model <- som(data.matrix(df), grid=som_grid, rlen=500, mode='batch')
-  
-  par(mfrow=c(1,1))
-  # training progress to see convergence 
-  plot(som_model, type='changes')
-  
-  # see how many samples are in each node, aim for 5-10 
-  plot(som_model, type='count', main='Samples per Node')
-  
-  # plot each data point
-  plot(som_model, type='mapping', pch=20)
-  
-  # U matrix for distance and then clustering!
-  plot(som_model, type='dist.neighbours', main='SOM neighbor distances')
-  som_hc <- cutree(hclust(object.distances(som_model, 'codes')), k=5)
-  # add.cluster.boundaries(som_model, som_hc) 
-  
-  # plot the codebook vectors 
-  plot(som_model, type='codes', zlim=c('red', 'green', 'blue'))
-  som_codebook <- som_model$codes[[1]]
-  
-  cols <- c('red', 'blue', 'green', 'yellow', 'black')
-  plot(som_model, type='mapping', keepMargins = T, col=NA, 
+    som_codebook <- som_model$codes[[1]]
+    cols <- c('red', 'blue', 'green', 'yellow', 'black')
+    som_hc <- cutree(hclust(object.distances(som_model, 'codes')), k=5)
+    png(file=paste(fig.path, 'transfer_hc_boundary.png'))
+    plot(som_model, type='mapping', keepMargins = T, col=NA, 
        bg= cols[som_hc], add.cluster.boundaries(som_model, som_hc))
-  
-  # mapping nodes back
-  df <-cbind(df, som_hc[som_model$unit.classif])
-  colnames(df)[ncol(df)] <- 'cluster'
-  
-  # Heatmap for specific variable 
-  par(mfrow=c(2,2))
-  for (i in 1:ncol(som_codebook)) {
-    plot(som_model, type='property', property= som_codebook[,i],
-         main= colnames(som_codebook)[i], palette.name = colorRampPalette(c('blue', 'green', 'yellow','red')))
-    add.cluster.boundaries(som_model, som_hc)
-  }
-  
-  return(df)
+    dev.off()
+
+    # mapping nodes back
+    df <-cbind(df, cluster=factor(som_hc[som_model$unit.classif]))
+
+    # Heatmap for specific variable 
+    png(file=paste(fig.path, 'transfer_feature_map.png'))
+    par(mfrow=c(3,2))
+    for (i in 1:ncol(som_codebook)) {
+        plot(som_model, type='property', property=som_codebook[,i],
+             main=colnames(som_codebook)[i], 
+             palette.name = colorRampPalette(c('blue', 'green', 'yellow','red')))
+        add.cluster.boundaries(som_model, som_hc)
+    }
+    dev.off()
+
+    return(df)
 }
 
+# Plots market value, transfer fee, and player position
+# histogram for each cluster defined by the cluster column.
+plot.pp.mv.tf <- function(df, cluster.type)
+{
+    # position type bar plot per cluster
+    pos.plot <-
+        ggplot(df, aes(x=Position_type, colour=cluster)) +
+            geom_bar()
 
-# without season 
-top_transfers_leagues2 <- subset(top_transfers_leagues, select=-c(Season, Price_diff))
-top_transfers_leagues2<- fit_som_models(top_transfers_leagues2, xdim=20, ydim=15, 'gaussian')
+    # market value histogram per cluster
+    mv.plot <- 
+        ggplot(df, aes(x=Market_value, colour=cluster)) +
+            geom_histogram(bins=30)
 
-som_fit %>% count(cluster)
-all_df[which(som_fit$cluster == 2), ]
+    # transfer fee histogram per cluster
+    tf.plot <- 
+        ggplot(df, aes(x=Transfer_fee, colour=cluster)) +
+            geom_histogram(bins=30)
 
-# try with only the price difference 
-top_transfers_leagues3 <- subset(top_transfers_leagues, select=-c(Season, Market_value, Transfer_fee))
-head(top_transfers_leagues3)
-summary(top_transfers_leagues3)
+    grid.arrange(pos.plot, mv.plot, tf.plot, 
+                 heights=c(1, 1),
+                 widths=c(1, 1),
+                 layout_matrix=rbind(c(1,2),
+                                     c(1,3)),
+                 top=paste("Histogram of Position type, Market value, Transfer fee per",
+                           cluster.type,
+                           "cluster"))
+}
 
-top_transfers_leagues3 <- fit_som_models(top_transfers_leagues3, xdim=20, ydim=15, 'gaussian')
-par(mfrow=c(1,1))
-hist(top_transfers_leagues3$cluster)
-top_transfers_leagues3 %>% count(cluster)
+# ====================================================================================
+# Data Cleaning
+# ====================================================================================
 
-# look at the 4th and 5th cluster
-which(top_transfers_leagues3$cluster == 4)
-all_df[which(top_transfers_leagues3$cluster >= 4), ]
-sort(all_df$Price_diff, decreasing = T)[1:10]
+# use relative path so that code is machine independent
+all_df <- read.csv('../data/top_transfers_all.csv')
 
-top_transfers_leagues3 %>% count(cluster)
+# drop the index from reading in 
+drop.cols <- c('X', 'Name', 'Position', 'Team_from', 'League_from',
+               'Team_to', 'League_to', 'Price_diff', 'Season')
+ttl <- all_df[,!(names(all_df) %in% drop.cols)]
 
+# reorder the levels and make factors
+league.types <- c('Big5', 'Europe', 'Americas', 'Asia Africa', 'Big5 B', 'Other B')
+ttl$League_type_to <- factor(ttl$League_type_to, levels=league.types)
+ttl$League_type_from <- factor(ttl$League_type_from, levels=league.types)
+
+position.types <- c('Goalkeeper', 'Defender', 'Midfielder', 'Forward')
+ttl$Position_type <- factor(ttl$Position_type, levels=position.types)
+
+# standardize numeric columns
+ttl$Transfer_fee <- as.numeric(scale(ttl$Transfer_fee))
+ttl$Market_value <- as.numeric(scale(ttl$Market_value))
+ttl$Age <- as.numeric(scale(ttl$Age))
+
+# ====================================================================================
+# Fit SOM
+# ====================================================================================
+
+ttl.sommed <- fit_som_models(ttl, xdim=20, ydim=15, 'gaussian')
+
+# plot position, market value, transfer fee per SOM clusters
+png(file=paste(FIG.PATH, 'transfer_som_ppmvtf.png'))
+plot.pp.mv.tf(ttl.sommed, cluster.type='SOM')
+dev.off()
+
+# Run to get tex code to make table
+# xtable(all_df[which(ttl.sommed$cluster == 5), ])
+
+# ====================================================================================
+# Fit Hierarchical Clustering
+# ====================================================================================
+
+n.clusters <- 5
+ttl.dist <- daisy(ttl, metric='gower') 
+ttl.dist.hc <- cutree(hclust(ttl.dist, method='complete'), n.clusters)
+ttl.hced <- cbind(ttl, cluster=factor(ttl.dist.hc))
+
+# plot position, market value, transfer fee per HC clusters
+png(file=paste(FIG.PATH, 'transfer_hc_ppmvtf.png'))
+plot.pp.mv.tf(ttl.hced, cluster.type='HC')
+dev.off()
