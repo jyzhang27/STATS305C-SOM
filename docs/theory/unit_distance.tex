@@ -1,0 +1,34 @@
+\subsection{Extension of Metric in Data Space}\label{ssec:metric-extension}
+
+So far, we assumed that the metric to find the BMU is the usual Euclidean norm.
+However, this norm is not suitable for categorical features.
+Yet, in practice, many datasets will have informative categorical variables
+that may affect our analysis. 
+Our goal in this section is to extend this norm to a more suitable norm
+on the data space which may have a mix of categorical and quantitative features.
+
+We first define a distance measure for categorical variables. 
+We convert a categorical variable into a one-hot matrix, 
+where each column corresponds to a class, 
+and a value of 1 indicates membership of that class. 
+We will call this matrix the \textbf{classification matrix}. 
+For two vectors $a,b \in \set{0,1}^n$, we define the \emph{Tanimoto distance} 
+(also called the \emph{Hamming distance}) as 
+\[ 
+    d(a,b) = \frac{1}{n} \sum_{i=1}^n \indic{a_i \neq b_i}
+\] 
+i.e.\ the proportion of entries that do not match. 
+We can extend this by using 0.5 as the boundary: 
+\begin{align}
+    d(a,b) = \frac{1}{n} \sum_{i=1}^n 
+    \paren{\indic{b_i < 0.5 < a_i} + \indic{a_i \leq 0.5 \leq b_i}}
+    \label{eq:tani-ext}
+\end{align}
+
+Using this distance measure, we can now include categorical variables in our model. 
+We define the norm $\norm{x-m} := \sum\limits_{i=1}^n \norm{x_i - m_i}$
+where if the $i$th feature is categorical, 
+the norm is assumed to be Eq.~\ref{eq:tani-ext}
+and otherwise the Euclidean norm.
+The Kohonen package in R~\cite{wehrens:2007}\cite{wehrens:2018},
+for example, implement the distance measure in this fashion.

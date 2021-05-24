@@ -1,0 +1,53 @@
+\section{Introduction}\label{sec:introduction}
+
+Self-organizing map (SOM) is an unsupervised learning algorithm
+first introduced by Teuvo Kohonen~\cite{kohonen:1990}
+that tunes cells, or nodes, in a two-dimensional grid 
+to various input signal patterns from data.
+In a sense, SOM is a type of a neural network,
+however, it differs from the traditional sense
+such as feedforward network in that there is 
+no distinct input layer where we initially feed data
+and an output layer whose value is identified as the outcome of the computation.
+Rather, neighboring nodes all \emph{compete} for activity
+by updating themselves in a way to be similar to certain kinds of input signals.
+This way, each node asymptotically becomes a decoder for a specific class of signals. 
+
+In comparison to other unsupervised learning for data exploration,
+SOM has the benefit of interpretable visualization and flexibility.
+One can easily visualize the result of SOM
+since the nodes all reside in a two-dimensional grid and their relative distances
+can be seen as a heat map.
+It is then particularly useful when exploring the dataset
+to find any distinct clusters.
+Unlike a simple projection method such as PCA,
+which truncates to at most the first three principal components for visualization,
+SOM could potentially capture more information since 
+the full data vector is considered and the ``learning'' occurs entirely in the data space
+rather than on a projected space.
+Moreover, there is a direct association of each sample point to a node.
+Therefore, we may apply any clustering algorithm to a ``distance'' matrix of nodes
+to cluster the nodes themselves, then identify each sample point as a member of a cluster
+if it resides in a node in that cluster. 
+The benefit of this approach is that a clustering algorithm on the raw data
+using the usual distance matrix with Euclidean norm may not distinguish points as effectively 
+as running the algorithm on the distance matrix for nodes.
+Intuitively, the nodes can be thought of as a collection of \emph{key summaries} of certain aspects of the data
+which have less noisy distances.
+Section~\ref{ssec:transfer} further elaborates on this point.
+
+In this proposal, we outline the details of SOM
+with a similar progression as in the original paper by Kohonen~\cite{kohonen:1990}.
+Section~\ref{sec:theory} covers the theoretical background for understanding 
+the motivation, algorithm, and intuition for SOM.
+In particular, Section~\ref{ssec:cl} briefly covers competitive learning
+as motivation for the SOM algorithm,
+Section~\ref{ssec:som} details the exact SOM algorithm,
+Section~\ref{ssec:metric-extension} describes an extension
+of a metric that is suitable for categorical variables as well,
+and Section~\ref{ssec:optimization} shows a more optimized algorithm
+that performs orders of magnitude faster than the original algorithm.
+Section~\ref{sec:examples} describes two applications of SOM.
+The first application in Section~\ref{ssec:colors} organizes randomly generate color values
+and the second application in Section~\ref{ssec:transfer}
+organizes football players into tiers using transfer data.
