@@ -3,3 +3,12 @@ deps*
 *.DS_Store
 *.RData
 *.Rhistory
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex.gz
