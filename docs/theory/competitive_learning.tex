@@ -1,0 +1,37 @@
+\subsection{Competitive Learning}\label{ssec:cl}
+
+In this section, we briefly describe \emph{competitive learning}
+and some early works to give context for the underlying principle of SOM.
+Let $x(t) \in \R^n$ denote a sample point at time $t \in \N$,
+and a collection of vectors $\set{m_i(t) : i =1,\ldots, k}$.
+We assume that $m_i(0)$ are initialized randomly
+and have a metric $d(a, b)$ that measures the distance between any two points $a, b \in \R^n$
+in the sample space.
+The idea is to find the vector $m_{i^*}(t)$ that is closest to $x(t)$,
+i.e.\ minimizes $d(x(t), m_i(t))$,
+at any given $t$ and 
+update $m_{i^*}(t)$ such that it is even closer to $x(t)$.
+
+An early work of competitive learning is \emph{vector quantization}~\cite{gray:1984}.
+The goal of this method is to approximate the population distribution $p(x)$
+for a multi-dimensional data $x \in \R^n$ using finitely many codebook vectors $m_i$.
+Let $m_c = \argmin\limits_{m \in \set{m_i}} \norm{x - m}$.
+Note that $m_c$ depends on $x$.
+One approach to placing these $m_i$ vectors in $\R^n$ is to minimize 
+$E := \int \norm{x - m_c}^r p(x) dx$.
+While there is no analytical solution,
+there are iterative methods to approximate these placements.
+When $r = 2$, which is the common use-case,
+a stepwise iterative method asymptotically approaches the optimal placement:
+\begin{align*}
+    m_c(t+1) &= m_c(t) + \alpha(t) (x(t) - m_c(t)) \\
+    m_i(t+1) &= m_i(t),\, i \neq c
+\end{align*}
+where $\alpha(t)$ is the \emph{learning-rate},
+which must be monotonically decreasing and in the range $(0,1)$.
+
+In practice, the $m_i(t)$ codebook vectors develop into \emph{feature-sensitive detectors}.
+There is a biological counterpart called \emph{feature-sensitive cells},
+which have been successfully modeled by Nass, M.M. and Cooper, L.N.~\cite{nass:1975}.
+This parallel indicates that vector quantization may be a natural way
+to have nodes learn certain patterns about the data.

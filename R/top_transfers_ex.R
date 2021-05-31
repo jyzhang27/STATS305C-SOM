@@ -48,7 +48,7 @@ fit_som_models <- function(df, xdim, ydim, h_function,
     som_codebook <- som_model$codes[[1]]
     cols <- c('red', 'blue', 'green', 'yellow', 'black')
     som_hc <- cutree(hclust(object.distances(som_model, 'codes')), k=5)
-    png(file=paste(fig.path, 'transfer_hc_boundary.png'))
+    png(file=paste(fig.path, 'transfer_hc_boundary.png', sep=''))
     plot(som_model, type='mapping', keepMargins = T, col=NA, 
        bg= cols[som_hc], add.cluster.boundaries(som_model, som_hc))
     dev.off()
@@ -57,7 +57,7 @@ fit_som_models <- function(df, xdim, ydim, h_function,
     df <-cbind(df, cluster=factor(som_hc[som_model$unit.classif]))
 
     # Heatmap for specific variable 
-    png(file=paste(fig.path, 'transfer_feature_map.png'))
+    png(file=paste(fig.path, 'transfer_feature_map.png', sep=''))
     par(mfrow=c(3,2))
     for (i in 1:ncol(som_codebook)) {
         plot(som_model, type='property', property=som_codebook[,i],
@@ -72,7 +72,7 @@ fit_som_models <- function(df, xdim, ydim, h_function,
 
 # Plots market value, transfer fee, and player position
 # histogram for each cluster defined by the cluster column.
-plot.pp.mv.tf <- function(df, cluster.type)
+plot.pp.mv.tf <- function(df, cluster.type, add.cl5)
 {
     # position type bar plot per cluster
     pos.plot <-
@@ -89,14 +89,26 @@ plot.pp.mv.tf <- function(df, cluster.type)
         ggplot(df, aes(x=Transfer_fee, colour=cluster)) +
             geom_histogram(bins=30)
 
-    grid.arrange(pos.plot, mv.plot, tf.plot, 
-                 heights=c(1, 1),
-                 widths=c(1, 1),
-                 layout_matrix=rbind(c(1,2),
-                                     c(1,3)),
-                 top=paste("Histogram of Position type, Market value, Transfer fee per",
-                           cluster.type,
-                           "cluster"))
+    # add cluster 5 information
+    if (add.cl5) {
+        mv.plot <- mv.plot + 
+            geom_vline(data=df[which(df['cluster']==5),],
+                       aes(xintercept=Market_value),
+                       colour='red', linetype='dashed')
+        tf.plot <- tf.plot + 
+            geom_vline(data=df[which(df['cluster']==5),],
+                       aes(xintercept=Transfer_fee),
+                       colour='red', linetype='dashed')
+    }
+
+    arrangeGrob(pos.plot, mv.plot, tf.plot, 
+                heights=c(1, 1),
+                widths=c(1, 1),
+                layout_matrix=rbind(c(1,2),
+                                    c(1,3)),
+                top=paste("Histogram of Position type, Market value, Transfer fee per",
+                          cluster.type,
+                          "cluster"))
 }
 
 # ====================================================================================
@@ -131,9 +143,9 @@ ttl$Age <- as.numeric(scale(ttl$Age))
 ttl.sommed <- fit_som_models(ttl, xdim=20, ydim=15, 'gaussian')
 
 # plot position, market value, transfer fee per SOM clusters
-png(file=paste(FIG.PATH, 'transfer_som_ppmvtf.png'))
-plot.pp.mv.tf(ttl.sommed, cluster.type='SOM')
-dev.off()
+som.ppmvtf.grob <- plot.pp.mv.tf(ttl.sommed, cluster.type='SOM', add.cl5=T)
+ggsave(file=paste(FIG.PATH, 'transfer_som_ppmvtf.png', sep=''), som.ppmvtf.grob,
+        width=10, height=6)
 
 # Run to get tex code to make table
 # xtable(all_df[which(ttl.sommed$cluster == 5), ])
@@ -148,6 +160,6 @@ ttl.dist.hc <- cutree(hclust(ttl.dist, method='complete'), n.clusters)
 ttl.hced <- cbind(ttl, cluster=factor(ttl.dist.hc))
 
 # plot position, market value, transfer fee per HC clusters
-png(file=paste(FIG.PATH, 'transfer_hc_ppmvtf.png'))
-plot.pp.mv.tf(ttl.hced, cluster.type='HC')
-dev.off()
+hc.ppmvtf.grob <- plot.pp.mv.tf(ttl.hced, cluster.type='HC', add.cl5=F)
+ggsave(file=paste(FIG.PATH, 'transfer_hc_ppmvtf.png', sep=''), hc.ppmvtf.grob,
+        width=10, height=6)

@@ -1,0 +1,16 @@
+\subsection{Optimization}\label{ssec:optimization}
+
+Section~\ref{ssec:som} describes the original SOM algorithm, 
+which randomly samples a data point and only updates the BMU's neighbors for this data point.
+It turns out that a method called \emph{Batch Map} produces nearly the same results,
+but is an order of magnitude faster~\cite{kohonen:2007}, 
+since it updates all nodes simultaneously without sampling.
+The idea is as follows: for every node $j$ in the grid, 
+compute the average $\bar{x}_j$ where the average is over all input items $x(t)$ such that $m_j$ is the BMU. 
+We then update each codebook vector using the following formula:
+\begin{align*}
+    m_i(t+1) = \frac{\sum\limits_{j \in N_i(t)} n_j(t) h_{ji}(t) \bar{x}_j(t)}{\sum\limits_{j \in N_i(t)} n_j(t) h_{ji}(t)}
+\end{align*}
+where $n_j(t)$ is the number of input items mapped into the node $j$ at time $t$
+and $N_i(t)$ is the set of all neighbors of node $i$ at time $t$.
+This procedure is then repeated many times until convergence.
